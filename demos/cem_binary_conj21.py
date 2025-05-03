@@ -166,7 +166,7 @@ def generate_session(agent, n_sessions, verbose = 1):
 
 		# derive action from model distribution
 		tic = time.time()
-		actions[:,step] = (np.random.rand(n_sessions) < prob).astype(int)
+		actions[:,step] = (np.random.rand(n_sessions, 1) < prob).astype(int).flatten()
 		
 		# inizialize next state with current state
 		state_next = states[:,:,step]
@@ -184,7 +184,7 @@ def generate_session(agent, n_sessions, verbose = 1):
 			recordsess_time += time.time() - tic
 		else: # final iteration
 			scores = [calcScore(session) for session in state_next]
-			pred_time = time.time() - tic
+			scorecalc_time = time.time() - tic
 		step += 1
 
 	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.	
