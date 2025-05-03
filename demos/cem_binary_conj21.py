@@ -228,8 +228,14 @@ def select_elites(states_batch, actions_batch, rewards_batch, percentile=50):
 def select_elites_fast(states_batch, actions_batch, rewards_batch, percentile=50):
 	reward_threshold = np.percentile(rewards_batch, percentile)
 	filter_index = rewards_batch >= reward_threshold+0.0000001
-	
-	return states_batch[filter_index], actions_batch[filter_index]
+
+	filtered_states = states_batch[filter_index]
+	filtered_actions = actions_batch[filter_index]
+
+	old_shape = filtered_states.shape
+	new_first_dimension = old_shape[0] * old_shape[1]
+
+	return filtered_states.reshape(new_first_dimension, old_shape[2]), filtered_actions.reshape(new_first_dimension)
 	
 
 def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile=90):
