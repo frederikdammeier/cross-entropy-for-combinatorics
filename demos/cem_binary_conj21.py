@@ -229,7 +229,7 @@ def select_elites_fast(states_batch, actions_batch, rewards_batch, percentile=50
 	reward_threshold = np.percentile(rewards_batch, percentile)
 	filter_index = rewards_batch >= reward_threshold+0.0000001
 	
-	return elite_states[filter_index], elite_actions[filter_index]
+	return states_batch[filter_index], actions_batch[filter_index]
 	
 
 def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile=90):
