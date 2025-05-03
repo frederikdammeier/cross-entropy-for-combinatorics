@@ -147,58 +147,50 @@ def generate_session(agent, n_sessions, verbose = 1):
 	actions = np.zeros([n_sessions, len_game], dtype = int)
 	state_next = np.zeros([n_sessions,observation_space], dtype = int)
 	prob = np.zeros(n_sessions)
-	states[:,MYN,0] = 1
-	step = 0
 	scores = np.zeros([n_sessions])
-	recordsess_time = 0
-	play_time = 0
-	scorecalc_time = 0
-	pred_time = 0
-	while (True):
-		step += 1		
+	
+	
+	pred_time, play_time, scorecalc_time, recordsess_time, total_time = 0 # timers
+
+	tock = time.time()
+
+	states[:,MYN,0] = 1 # initialize first action index
+	step = 0
+	while (step < len_game): # TODO might need index +-1
+		
+
+		# get prediction for next index
 		tic = time.time()
-		prob = agent.predict(states[:,:,step-1], batch_size = n_sessions) 
-		pred_time += time.time()-tic
+		prob = agent.predict(states[:,:,step], batch_size = n_sessions) 
+		pred_time += time.time() - tic
+
+		# derive action from model distribution
+		tic = time.time()
+		actions[:,step] = (np.random.rand(n_sessions) < prob).astype(int)
 		
-		for i in range(n_sessions):
-			
-			if np.random.rand() < prob[i]: # Model output is bernulli distributed. Here we sample from the output distribution.
-				action = 1
-			else:
-				action = 0
-			actions[i][step-1] = action
+		# inizialize next state with current state
+		state_next = states[:,:,step]
 
-			tic = time.time()
-			state_next[i] = states[i,:,step-1]
-			play_time += time.time()-tic
+		# Add current action to next state
+		state_next[:,step] = actions[:,step]
+		play_time += time.time() - tic
 
+		# Bitshift of action index in state array
+		tic = time.time()
+		state_next[:,MYN + step] = 0
+		if (step < MYN - 1): # regular iteration: update  next state
+			state_next[:, MYN + step + 1] = 1
+			states[:,:,step + 1] = state_next
+			recordsess_time += time.time() - tic
+		else: # final iteration
+			scores = [calcScore(session) for session in state_next]
+			pred_time = time.time() - tic
+		step += 1
 
-			if (action > 0): # question is if this comparison is of computational benefit
-				state_next[i][step-1] = action		
-
-			# The following update is painfully slow for what is essentially a bit shift
-			state_next[i][MYN + step-1] = 0 # reset prev. action index
-			if (step < MYN):
-				state_next[i][MYN + step] = 1 # set next action index
-						
-			terminal = step == MYN # did we reach the final step?
-			
-			tic = time.time()
-			if terminal: 
-				scores[i] = calcScore(state_next[i])
-			scorecalc_time += time.time()-tic
-
-			tic = time.time()
-			if not terminal:
-				states[i,:,step] = state_next[i]			
-			recordsess_time += time.time()-tic
-			
-		
-		if terminal:
-			break
-	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.		
+	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.	
+	total_time = time.time() - tock	
 	if (verbose):
-		print("Predict: "+str(pred_time)+", play: " + str(play_time) +", scorecalc: " + str(scorecalc_time) +", recordsess: " + str(recordsess_time))
+		print("Predict: "+str(pred_time)+", play: " + str(play_time) +", scorecalc: " + str(scorecalc_time) +", recordsess: " + str(recordsess_time) + "; total: " + str(total_time))
 	return states, actions, scores
 
 
