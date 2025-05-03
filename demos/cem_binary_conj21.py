@@ -150,7 +150,7 @@ def generate_session(agent, n_sessions, verbose = 1):
 	scores = np.zeros([n_sessions])
 	
 	
-	pred_time, play_time, scorecalc_time, recordsess_time, total_time = 0 # timers
+	pred_time = play_time = scorecalc_time = recordsess_time = total_time = 0 # timers
 
 	tock = time.time()
 
@@ -266,7 +266,7 @@ for i in range(1000000): #1000000 generations should be plenty
 	#generate new sessions
 	#performance can be improved with joblib
 	tic = time.time()
-	sessions = generate_session(model,n_sessions,0) #change 0 to 1 to print out how much time each step in generate_session takes 
+	sessions = generate_session(model,n_sessions,1) #change 0 to 1 to print out how much time each step in generate_session takes 
 	sessgen_time = time.time()-tic
 	tic = time.time()
 	
