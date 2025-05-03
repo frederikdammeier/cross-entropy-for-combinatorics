@@ -183,7 +183,7 @@ def generate_session(agent, n_sessions, verbose = 1):
 			states[:,:,step + 1] = state_next
 			recordsess_time += time.time() - tic
 		else: # final iteration
-			scores = [calcScore(session) for session in state_next]
+			scores = np.array([calcScore(session) for session in state_next], dtype=float)
 			scorecalc_time = time.time() - tic
 		step += 1
 
@@ -224,7 +224,14 @@ def select_elites(states_batch, actions_batch, rewards_batch, percentile=50):
 	elite_states = np.array(elite_states, dtype = int)	
 	elite_actions = np.array(elite_actions, dtype = int)	
 	return elite_states, elite_actions
+
+def select_elites_fast(states_batch, actions_batch, rewards_batch, percentile=50):
+	reward_threshold = np.percentile(rewards_batch, percentile)
+	filter_index = rewards_batch >= reward_threshold+0.0000001
 	
+	return elite_states[filter_index], elite_actions[filter_index]
+	
+
 def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile=90):
 	"""
 	Select all the sessions that will survive to the next generation
@@ -232,8 +239,7 @@ def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile
 	If this function is the bottleneck, it can easily be sped up using numba
 	"""
 	
-	counter = n_sessions * (100.0 - percentile) / 100.0
-	reward_threshold = np.percentile(rewards_batch,percentile)
+
 
 	super_states = []
 	super_actions = []
@@ -284,7 +290,7 @@ for i in range(1000000): #1000000 generations should be plenty
 	randomcomp_time = time.time()-tic 
 	tic = time.time()
 
-	elite_states, elite_actions = select_elites(states_batch, actions_batch, rewards_batch, percentile=percentile) #pick the sessions to learn from
+	elite_states, elite_actions = select_elites_fast(states_batch, actions_batch, rewards_batch, percentile=percentile) #pick the sessions to learn from
 	select1_time = time.time()-tic
 
 	tic = time.time()
