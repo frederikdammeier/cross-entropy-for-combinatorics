@@ -106,6 +106,8 @@ def calcScore(state):
 		return -INF
 		
 	#Calculate the eigenvalues of G
+	# Takes approx. O(N^3) time
+	# Could be sped up with numba
 	evals = np.linalg.eigvalsh(nx.adjacency_matrix(G).todense())
 	evalsRealAbs = np.zeros_like(evals)
 	for i in range(len(evals)):
@@ -113,6 +115,8 @@ def calcScore(state):
 	lambda1 = max(evalsRealAbs)
 	
 	#Calculate the matching number of G
+	# Takes O(N^3) time
+	# Not feasible to replace this function. 
 	maxMatch = nx.max_weight_matching(G)
 	mu = len(maxMatch)
 		
@@ -131,9 +135,6 @@ def calcScore(state):
 
 
 ####No need to change anything below here. 
-	
-	
-						
 
 def generate_session(agent, n_sessions, verbose = 1):
 	"""
@@ -148,7 +149,7 @@ def generate_session(agent, n_sessions, verbose = 1):
 	prob = np.zeros(n_sessions)
 	states[:,MYN,0] = 1
 	step = 0
-	total_score = np.zeros([n_sessions])
+	scores = np.zeros([n_sessions])
 	recordsess_time = 0
 	play_time = 0
 	scorecalc_time = 0
@@ -161,24 +162,32 @@ def generate_session(agent, n_sessions, verbose = 1):
 		
 		for i in range(n_sessions):
 			
-			if np.random.rand() < prob[i]:
+			if np.random.rand() < prob[i]: # Model output is bernulli distributed. Here we sample from the output distribution.
 				action = 1
 			else:
 				action = 0
 			actions[i][step-1] = action
+
 			tic = time.time()
 			state_next[i] = states[i,:,step-1]
 			play_time += time.time()-tic
-			if (action > 0):
+
+
+			if (action > 0): # question is if this comparison is of computational benefit
 				state_next[i][step-1] = action		
-			state_next[i][MYN + step-1] = 0
+
+			# The following update is painfully slow for what is essentially a bit shift
+			state_next[i][MYN + step-1] = 0 # reset prev. action index
 			if (step < MYN):
-				state_next[i][MYN + step] = 1			
-			terminal = step == MYN
+				state_next[i][MYN + step] = 1 # set next action index
+						
+			terminal = step == MYN # did we reach the final step?
+			
 			tic = time.time()
-			if terminal:
-				total_score[i] = calcScore(state_next[i])
+			if terminal: 
+				scores[i] = calcScore(state_next[i])
 			scorecalc_time += time.time()-tic
+
 			tic = time.time()
 			if not terminal:
 				states[i,:,step] = state_next[i]			
@@ -190,7 +199,7 @@ def generate_session(agent, n_sessions, verbose = 1):
 	#If you want, print out how much time each step has taken. This is useful to find the bottleneck in the program.		
 	if (verbose):
 		print("Predict: "+str(pred_time)+", play: " + str(play_time) +", scorecalc: " + str(scorecalc_time) +", recordsess: " + str(recordsess_time))
-	return states, actions, total_score
+	return states, actions, scores
 
 
 
