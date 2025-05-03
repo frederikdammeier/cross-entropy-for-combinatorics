@@ -238,8 +238,8 @@ def select_super_sessions(states_batch, actions_batch, rewards_batch, percentile
 	Similar to select_elites function
 	If this function is the bottleneck, it can easily be sped up using numba
 	"""
-	
-
+	counter = n_sessions * (100.0 - percentile) / 100.0
+	reward_threshold = np.percentile(rewards_batch,percentile)
 
 	super_states = []
 	super_actions = []
